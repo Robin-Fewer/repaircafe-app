@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               alt="Repair Café Bad Säckingen"
               width={220}
               height={60}
-              className="invert sepia saturate-50 brightness-[0.95] h-14 w-auto"
+              className="brightness-0 invert sepia saturate-50 h-14 w-auto"
               priority
             />
           </div>
