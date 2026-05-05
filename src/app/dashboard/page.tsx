@@ -84,7 +84,7 @@ export default function DashboardPage() {
               type="password"
               value={pw}
               onChange={(e) => { setPw(e.target.value); setPwError(''); }}
-              className="w-full border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
               placeholder="Passwort"
               autoFocus
             />

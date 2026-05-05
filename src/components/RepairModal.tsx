@@ -149,7 +149,7 @@ export default function RepairModal({ repair, onClose, onUpdate, mode }: RepairM
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                   placeholder="Reparaturnotizen hinzufügen..."
                 />
                 <button
