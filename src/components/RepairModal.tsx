@@ -85,10 +85,6 @@ export default function RepairModal({ repair, onClose, onUpdate, mode }: RepairM
               <p className="font-semibold">{repair.customer_firstname} {repair.customer_lastname}</p>
             </div>
             <div>
-              <p className="text-xs text-muted uppercase tracking-wide">E-Mail</p>
-              <p className="text-sm">{repair.customer_email}</p>
-            </div>
-            <div>
               <p className="text-xs text-muted uppercase tracking-wide">Gegenstand</p>
               <p className="font-semibold">{repair.item}</p>
             </div>
@@ -199,8 +195,7 @@ export default function RepairModal({ repair, onClose, onUpdate, mode }: RepairM
                   {confirmClose && !confirmClose2 && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
                       <p className="text-sm font-medium text-orange-800">
-                        Bitte bestätigen: Auftrag wirklich abschließen?<br/>
-                        <span className="text-orange-600">Eine E-Mail wird an {repair.customer_email} gesendet.</span>
+                        Bitte bestätigen: Auftrag wirklich abschließen?
                       </p>
                       <div className="flex gap-2">
                         <button onClick={() => setConfirmClose(false)} className="flex-1 py-2 border border-border rounded-lg text-sm hover:bg-muted-bg transition-colors">
