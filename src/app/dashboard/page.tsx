@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Repair, CATEGORY_LABELS, RepairCategory } from '@/lib/types';
-
+import { Repair, CATEGORY_LABELS, STATUS_LABELS, RepairCategory } from '@/lib/types';
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className={`bg-card rounded-xl border border-border p-5 shadow-sm`}>
+    <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
       <p className="text-sm text-muted">{label}</p>
       <p className={`text-3xl font-bold mt-1 ${color || 'text-foreground'}`}>{value}</p>
       {sub && <p className="text-xs text-muted mt-1">{sub}</p>}
     </div>
   );
+}
+
+interface EditState {
+  category: RepairCategory | '';
+  repair_notes: string;
 }
 
 export default function DashboardPage() {
@@ -23,6 +27,11 @@ export default function DashboardPage() {
   const [exportLoading, setExportLoading] = useState<string | null>(null);
   const [today] = useState(new Date().toISOString().split('T')[0]);
   const [year] = useState(new Date().getFullYear().toString());
+  const [showManage, setShowManage] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<EditState>({ category: '', repair_notes: '' });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -53,6 +62,32 @@ export default function DashboardPage() {
       return () => clearInterval(i);
     }
   }, [authed, fetchAll]);
+
+  function startEdit(r: Repair) {
+    setEditingId(r.id);
+    setEditState({ category: r.category || '', repair_notes: r.repair_notes || '' });
+    setDeleteConfirmId(null);
+  }
+
+  async function handleSaveEdit(id: string) {
+    setActionLoading(true);
+    await fetch(`/api/repairs/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: editState.category || null, repair_notes: editState.repair_notes }),
+    });
+    setEditingId(null);
+    setActionLoading(false);
+    await fetchAll();
+  }
+
+  async function handleDelete(id: string) {
+    setActionLoading(true);
+    await fetch(`/api/repairs/${id}`, { method: 'DELETE' });
+    setDeleteConfirmId(null);
+    setActionLoading(false);
+    await fetchAll();
+  }
 
   async function handleExport(type: string) {
     setExportLoading(type);
@@ -242,7 +277,7 @@ export default function DashboardPage() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-muted uppercase tracking-wide mb-3">Export</h2>
+            <h2 className="text-base font-semibold text-muted uppercase tracking-wide mb-3">Export & Verwaltung</h2>
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => handleExport('daily')}
@@ -265,8 +300,141 @@ export default function DashboardPage() {
               >
                 📥 {exportLoading === 'all' ? 'Wird exportiert...' : 'Alle Reparaturen'}
               </button>
+              <button
+                onClick={() => { setShowManage(!showManage); setEditingId(null); setDeleteConfirmId(null); }}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+              >
+                ✏️ {showManage ? 'Bearbeitung schließen' : 'Aufträge bearbeiten'}
+              </button>
             </div>
           </section>
+
+          {showManage && (
+            <section>
+              <h2 className="text-base font-semibold text-muted uppercase tracking-wide mb-3">Aufträge bearbeiten / löschen</h2>
+              <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted-bg border-b border-border">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-semibold text-muted">Datum</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted">Kunde</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted">Gegenstand</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted">Status</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted">Kategorie</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted">Notizen</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {repairs.map((r) => (
+                        <tr key={r.id} className="hover:bg-muted-bg/40">
+                          <td className="px-4 py-3 text-muted whitespace-nowrap text-xs">
+                            {new Date(r.created_at).toLocaleDateString('de-DE')}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="font-medium">{r.customer_firstname} {r.customer_lastname}</div>
+                          </td>
+                          <td className="px-4 py-3 max-w-[140px]">
+                            <div className="truncate">{r.item}</div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-xs text-muted">{STATUS_LABELS[r.status]}</span>
+                          </td>
+                          {editingId === r.id ? (
+                            <>
+                              <td className="px-4 py-3">
+                                <select
+                                  value={editState.category}
+                                  onChange={(e) => setEditState((s) => ({ ...s, category: e.target.value as RepairCategory | '' }))}
+                                  className="border border-border rounded px-2 py-1 text-xs w-full"
+                                >
+                                  <option value="">–</option>
+                                  {(['E', 'M', 'F', 'N', 'S'] as RepairCategory[]).map((c) => (
+                                    <option key={c} value={c}>{c} – {CATEGORY_LABELS[c]}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editState.repair_notes}
+                                  onChange={(e) => setEditState((s) => ({ ...s, repair_notes: e.target.value }))}
+                                  className="border border-border rounded px-2 py-1 text-xs w-full"
+                                  placeholder="Notizen..."
+                                />
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleSaveEdit(r.id)}
+                                    disabled={actionLoading}
+                                    className="text-xs bg-primary text-white px-2 py-1 rounded hover:bg-primary-dark disabled:opacity-50"
+                                  >
+                                    Speichern
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingId(null)}
+                                    className="text-xs border border-border px-2 py-1 rounded hover:bg-muted-bg"
+                                  >
+                                    Abbrechen
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-4 py-3 text-xs text-muted">
+                                {r.category ? `${r.category} – ${CATEGORY_LABELS[r.category as RepairCategory]}` : '–'}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-muted max-w-[160px]">
+                                <span className="truncate block">{r.repair_notes || '–'}</span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {deleteConfirmId === r.id ? (
+                                  <div className="flex gap-2 items-center">
+                                    <span className="text-xs text-red-600 font-medium">Wirklich löschen?</span>
+                                    <button
+                                      onClick={() => handleDelete(r.id)}
+                                      disabled={actionLoading}
+                                      className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                      Ja
+                                    </button>
+                                    <button
+                                      onClick={() => setDeleteConfirmId(null)}
+                                      className="text-xs border border-border px-2 py-1 rounded hover:bg-muted-bg"
+                                    >
+                                      Nein
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => startEdit(r)}
+                                      className="text-xs text-primary hover:text-primary-dark font-medium underline"
+                                    >
+                                      Bearbeiten
+                                    </button>
+                                    <button
+                                      onClick={() => { setDeleteConfirmId(r.id); setEditingId(null); }}
+                                      className="text-xs text-red-600 hover:text-red-800 font-medium underline"
+                                    >
+                                      Löschen
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>
