@@ -36,15 +36,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { customer_lastname, customer_firstname, customer_email, item, damage_description, signature_agreed } = body;
+  const { customer_lastname, customer_firstname, item, damage_description, signature_agreed } = body;
 
-  if (!customer_lastname || !customer_firstname || !customer_email || !item || !damage_description || !signature_agreed) {
+  if (!customer_lastname || !customer_firstname || !item || !damage_description || !signature_agreed) {
     return NextResponse.json({ error: 'Alle Felder sind erforderlich.' }, { status: 400 });
   }
 
   const { data, error } = await supabase
     .from('repairs')
-    .insert([{ customer_lastname, customer_firstname, customer_email, item, damage_description, signature_agreed }])
+    .insert([{ customer_lastname, customer_firstname, customer_email: '', item, damage_description, signature_agreed }])
     .select()
     .single();
 
