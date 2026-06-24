@@ -6,7 +6,6 @@ export default function AnmeldungPage() {
   const [form, setForm] = useState({
     customer_lastname: '',
     customer_firstname: '',
-    customer_email: '',
     item: '',
     damage_description: '',
     signature_agreed: false,
@@ -35,7 +34,7 @@ export default function AnmeldungPage() {
       const res = await fetch('/api/repairs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, customer_email: '' }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -54,13 +53,12 @@ export default function AnmeldungPage() {
     return (
       <div className="max-w-lg mx-auto text-center py-16">
         <div className="text-6xl mb-4">✓</div>
-        <h2 className="text-2xl font-bold text-primary mb-3">Anmeldung erfolgreich!</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-3">Anmeldung erfolgreich!</h2>
         <p className="text-muted mb-6">
           Ihre Reparaturanfrage wurde erfasst. Bitte bringen Sie Ihren Gegenstand zur Rezeption.
-          Sie werden per E-Mail benachrichtigt, sobald die Reparatur abgeschlossen ist.
         </p>
         <button
-          onClick={() => { setSuccess(false); setForm({ customer_lastname: '', customer_firstname: '', customer_email: '', item: '', damage_description: '', signature_agreed: false }); }}
+          onClick={() => { setSuccess(false); setForm({ customer_lastname: '', customer_firstname: '', item: '', damage_description: '', signature_agreed: false }); }}
           className="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition-colors"
         >
           Weitere Anmeldung
@@ -85,7 +83,7 @@ export default function AnmeldungPage() {
               required
               value={form.customer_firstname}
               onChange={handleChange}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               placeholder="Max"
             />
           </div>
@@ -98,25 +96,10 @@ export default function AnmeldungPage() {
               required
               value={form.customer_lastname}
               onChange={handleChange}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               placeholder="Mustermann"
             />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="customer_email">E-Mail-Adresse *</label>
-          <input
-            id="customer_email"
-            name="customer_email"
-            type="email"
-            required
-            value={form.customer_email}
-            onChange={handleChange}
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="max.mustermann@beispiel.de"
-          />
-          <p className="text-xs text-muted mt-1">Wir benachrichtigen Sie hier, wenn die Reparatur abgeschlossen ist.</p>
         </div>
 
         <div>
@@ -128,7 +111,7 @@ export default function AnmeldungPage() {
             required
             value={form.item}
             onChange={handleChange}
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             placeholder="z.B. Tischlampe, Kaffeemaschine, Hose..."
           />
         </div>
@@ -142,7 +125,7 @@ export default function AnmeldungPage() {
             rows={4}
             value={form.damage_description}
             onChange={handleChange}
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             placeholder="Beschreiben Sie bitte möglichst genau, was defekt ist und wie es dazu gekommen ist..."
           />
         </div>
@@ -154,7 +137,7 @@ export default function AnmeldungPage() {
               name="signature_agreed"
               checked={form.signature_agreed}
               onChange={handleChange}
-              className="mt-0.5 w-5 h-5 rounded border-border text-primary focus:ring-primary flex-shrink-0"
+              className="mt-0.5 w-5 h-5 rounded border-border text-primary focus:ring-accent flex-shrink-0"
             />
             <span className="text-sm text-foreground">
               <strong>Risikohinweis – Digitale Unterschrift:</strong> Ich bin mir bewusst, dass eine Reparatur nicht immer erfolgreich sein kann.

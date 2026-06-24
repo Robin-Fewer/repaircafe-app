@@ -4,17 +4,33 @@ import { useState, useEffect, useCallback } from 'react';
 import { Repair, CATEGORY_LABELS, STATUS_LABELS, RepairCategory } from '@/lib/types';
 import RepairModal from '@/components/RepairModal';
 
+const CATEGORIES: RepairCategory[] = ['E', 'M', 'F', 'N', 'S'];
+
+const catColors: Record<RepairCategory, { dot: string; badge: string }> = {
+  E: { dot: 'bg-yellow-400', badge: 'bg-yellow-100 text-yellow-800' },
+  M: { dot: 'bg-blue-400', badge: 'bg-blue-100 text-blue-800' },
+  F: { dot: 'bg-emerald-400', badge: 'bg-emerald-100 text-emerald-800' },
+  N: { dot: 'bg-pink-400', badge: 'bg-pink-100 text-pink-800' },
+  S: { dot: 'bg-purple-400', badge: 'bg-purple-100 text-purple-800' },
+};
+
 export default function ReceptionPage() {
   const [repairs, setRepairs] = useState<Repair[]>([]);
+  const [allActive, setAllActive] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Repair | null>(null);
   const [tab, setTab] = useState<'pending' | 'overview'>('pending');
 
   const fetchRepairs = useCallback(async () => {
     const statusFilter = tab === 'pending' ? 'pending' : 'pending,approved,in_progress,completed,failed';
-    const res = await fetch(`/api/repairs?status=${statusFilter}`);
-    const data = await res.json();
-    setRepairs(Array.isArray(data) ? data : []);
+    const [tabRes, activeRes] = await Promise.all([
+      fetch(`/api/repairs?status=${statusFilter}`),
+      fetch('/api/repairs?status=approved,in_progress'),
+    ]);
+    const tabData = await tabRes.json();
+    const activeData = await activeRes.json();
+    setRepairs(Array.isArray(tabData) ? tabData : []);
+    setAllActive(Array.isArray(activeData) ? activeData : []);
     setLoading(false);
   }, [tab]);
 
@@ -63,6 +79,34 @@ export default function ReceptionPage() {
             {repairs.filter(r => r.status === 'pending').length} ausstehend
           </span>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        {CATEGORIES.map((cat) => {
+          const active = allActive.filter((r) => r.category === cat);
+          const inProgress = active.filter((r) => r.status === 'in_progress').length;
+          const approved = active.filter((r) => r.status === 'approved').length;
+          return (
+            <div key={cat} className="bg-card rounded-xl border border-border p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${catColors[cat].dot}`} />
+                <span className="text-xs font-semibold text-muted uppercase tracking-wide">{cat} – {CATEGORY_LABELS[cat]}</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{active.length}</p>
+              <div className="flex gap-1 mt-2 flex-wrap">
+                {inProgress > 0 && (
+                  <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">{inProgress} aktiv</span>
+                )}
+                {approved > 0 && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{approved} warten</span>
+                )}
+                {active.length === 0 && (
+                  <span className="text-xs text-muted">Frei</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex gap-2 mb-6">
